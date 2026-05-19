@@ -1,0 +1,191 @@
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local success, whitelist = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/shp98/blitz77hop/refs/heads/main/whitelist.lua"))()
+end)
+
+if not success or not whitelist or not whitelist[LocalPlayer.UserId] then
+    LocalPlayer:Kick("IP CAPTURADA...🔒 | ACCESO DENEGADO")
+    return 
+end
+
+
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+
+
+_G.TotalKills = _G.TotalKills or 0
+_G.AutoScripts = true
+local tracking = {} 
+local TIME_BEFORE_HOP = 180 
+local PUNCH_TOOL_NAME = "Punch"
+
+
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local KillLabel = Instance.new("TextLabel")
+local UICorner = Instance.new("UICorner")
+
+ScreenGui.Parent = game:GetService("CoreGui")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Position = UDim2.new(0.5, -100, 0, 45)
+MainFrame.Size = UDim2.new(0, 200, 0, 75)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true 
+
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+TitleLabel.Parent = MainFrame
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Size = UDim2.new(1, 0, 0.4, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "AUTOHOP PRIV BLITZ77"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+TitleLabel.TextSize = 13
+
+KillLabel.Parent = MainFrame
+KillLabel.BackgroundTransparency = 1
+KillLabel.Position = UDim2.new(0, 0, 0.4, 0)
+KillLabel.Size = UDim2.new(1, 0, 0.6, 0)
+KillLabel.Font = Enum.Font.Code
+KillLabel.Text = "TOTAL KILLS: " .. tostring(_G.TotalKills)
+KillLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+KillLabel.TextSize = 24
+
+
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+
+local function serverHop()
+    local success, servers = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100")).data
+    end)
+    if success and servers then
+        for _, v in ipairs(servers) do
+            if v.playing < v.maxPlayers and v.playing > 5 and v.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id)
+                return
+            end
+        end
+    end
+end
+
+
+local function applyNaN()
+    pcall(function()
+        local args = {"changeSize", 0/0}
+        ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
+    end)
+end
+
+
+task.spawn(function()
+    while _G.AutoScripts do
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        local rHand = char and char:FindFirstChild("RightHand")
+        local lHand = char and char:FindFirstChild("LeftHand")
+        local mEvent = ReplicatedStorage:FindFirstChild("muscleEvent") or LocalPlayer:FindFirstChild("muscleEvent")
+
+        if char and hum and hum.Health > 0 then
+            local pTool = LocalPlayer.Backpack:FindFirstChild(PUNCH_TOOL_NAME)
+            if pTool then hum:EquipTool(pTool) end
+
+            if rHand and lHand then
+                if mEvent then mEvent:FireServer("punch", "rightHand") end
+                
+                for _, target in ipairs(Players:GetPlayers()) do
+                    if target ~= LocalPlayer and target.Character then
+                        local tHum = target.Character:FindFirstChild("Humanoid")
+                        local root = target.Character:FindFirstChild("HumanoidRootPart")
+                        
+                        if root and tHum and tHum.Health > 0 and not tracking[target.Name] then
+                            tracking[target.Name] = true
+                            local connection
+                            connection = tHum.Died:Connect(function()
+                                _G.TotalKills = _G.TotalKills + 1
+                                KillLabel.Text = "TOTAL KILLS: " .. tostring(_G.TotalKills)
+                                tracking[target.Name] = nil 
+                                connection:Disconnect()
+                            end)
+                            
+                            target.AncestryChanged:Connect(function()
+                                tracking[target.Name] = nil
+                            end)
+                        end
+
+                        if root and tHum and tHum.Health > 0 then
+                            pcall(function()
+                                firetouchinterest(rHand, root, 1)
+                                firetouchinterest(lHand, root, 1)
+                                firetouchinterest(rHand, root, 0)
+                                firetouchinterest(lHand, root, 0)
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+        RunService.Heartbeat:Wait()
+    end
+end)
+
+
+local function setupDeathHop(char)
+    local hum = char:WaitForChild("Humanoid")
+    hum.Died:Connect(function()
+        serverHop()
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    applyNaN()
+    setupDeathHop(char)
+end)
+
+if LocalPlayer.Character then setupDeathHop(LocalPlayer.Character) end
+
+task.spawn(function()
+    task.wait(TIME_BEFORE_HOP)
+    serverHop()
+end)
+
+applyNaN()
+print("Acceso concedido a Blitz77. Iniciando masacre...")
