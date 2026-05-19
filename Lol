@@ -1,4 +1,4 @@
-
+-- // 1. VERIFICACIÓN DE WHITELIST (PRIMERO QUE NADA)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
@@ -8,24 +8,24 @@ end)
 
 if not success or not whitelist or not whitelist[LocalPlayer.UserId] then
     LocalPlayer:Kick("IP CAPTURADA...🔒 | ACCESO DENEGADO")
-    return 
+    return -- Detiene la ejecución aquí si no está en la lista
 end
 
-
+-- // 2. EL RESTO DEL CÓDIGO (SOLO CORRE SI PASA LA WHITELIST)
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 
-
+-- // Configuración
 _G.TotalKills = _G.TotalKills or 0
 _G.AutoScripts = true
 local tracking = {} 
 local TIME_BEFORE_HOP = 180 
 local PUNCH_TOOL_NAME = "Punch"
 
-
+-- // 1. CREACIÓN DE LA UI
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local TitleLabel = Instance.new("TextLabel")
@@ -60,7 +60,7 @@ KillLabel.Text = "TOTAL KILLS: " .. tostring(_G.TotalKills)
 KillLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 KillLabel.TextSize = 24
 
-
+-- LÓGICA DE MOVIMIENTO (DRAG)
 local dragging, dragInput, dragStart, startPos
 local function update(input)
     local delta = input.Position - dragStart
@@ -92,7 +92,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-
+-- // 2. FUNCIÓN SERVER HOP
 local function serverHop()
     local success, servers = pcall(function()
         return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100")).data
@@ -107,7 +107,7 @@ local function serverHop()
     end
 end
 
-
+-- // 3. LÓGICA NaN (Ghost Mode)
 local function applyNaN()
     pcall(function()
         local args = {"changeSize", 0/0}
@@ -115,7 +115,7 @@ local function applyNaN()
     end)
 end
 
-
+-- // 4. AUTO KILL + CONTEO PRECISO (1 EN 1)
 task.spawn(function()
     while _G.AutoScripts do
         local char = LocalPlayer.Character
@@ -167,7 +167,7 @@ task.spawn(function()
     end
 end)
 
-
+-- // 5. SISTEMA DE SALTOS
 local function setupDeathHop(char)
     local hum = char:WaitForChild("Humanoid")
     hum.Died:Connect(function()
